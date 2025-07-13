@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useCurrentAccount } from "@mysten/dapp-kit";
+import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,6 +37,7 @@ export default function HomePage() {
       if (storeId) {
         const userDocs = await getUserDocuments(storeId);
         setDocuments(userDocs);
+        console.log("User documents loaded:", userDocs);
       }
     } catch (error) {
       console.error("Error loading documents:", error);
@@ -59,9 +60,9 @@ export default function HomePage() {
             Secure Document Management on Sui Blockchain
           </p>
           {currentAccount && (
-            <Badge variant="outline" className="text-sm">
-              Connected: {currentAccount.address.slice(0, 6)}...{currentAccount.address.slice(-4)}
-            </Badge>
+            
+            
+            <ConnectButton />
           )}
         </div>
 
@@ -74,8 +75,9 @@ export default function HomePage() {
                 Connect your Sui wallet to start managing your documents securely on the blockchain.
               </p>
               <p className="text-sm text-gray-500">
-                Please use the wallet connection button in the top navigation.
+                Please use the wallet connection button below.
               </p>
+              <ConnectButton/>
             </CardContent>
           </Card>
         ) : (
