@@ -9,7 +9,7 @@ import { SuiProvider } from "./provider";
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "DocChain - Decentralized Document Management",
+  title: "CertiSui - Decentralized Document Management",
   description: "Secure document storage, sharing, and verification on the blockchain",
   generator: 'v0.dev'
 }

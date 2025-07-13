@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -33,7 +32,6 @@ export default function AddDocumentPage() {
   const [documentHash, setDocumentHash] = useState("");
   const [formData, setFormData] = useState({
     title: "",
-    description: "",
     category: "",
     file: null as File | null,
   });
@@ -179,22 +177,6 @@ export default function AddDocumentPage() {
                     setFormData((prev) => ({ ...prev, title: e.target.value }))
                   }
                   required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Enter document description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  rows={3}
                 />
               </div>
 

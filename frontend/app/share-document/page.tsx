@@ -33,7 +33,7 @@ export default function ShareDocumentPage() {
 
     // Simulate sharing process
     setTimeout(() => {
-      const mockShareLink = `https://docchain.app/shared/${Math.random().toString(36).substr(2, 9)}`
+      const mockShareLink = `https://CertiSui.app/shared/${Math.random().toString(36).substr(2, 9)}`
       setShareLink(mockShareLink)
       setIsSharing(false)
     }, 2000)
