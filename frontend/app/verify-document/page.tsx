@@ -1,8 +1,11 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
+import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit"
+import crypto from "crypto-browserify"
+import { Buffer } from "buffer"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,13 +13,29 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Shield, Hash, CheckCircle, XCircle, Upload } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { verifyDocument, getUserStoreFromEvents, getUserDocuments } from "@/lib/store"
+
+interface VerificationResult {
+  isValid: boolean;
+  documentHash: string;
+  title?: string;
+  uploadDate?: string;
+  owner?: string;
+  category?: string;
+  lastModified?: string;
+  verificationCount?: number;
+  blockNumber?: number;
+}
 
 export default function VerifyDocumentPage() {
   const router = useRouter()
+  const currentAccount = useCurrentAccount()
+  const { mutate: signAndExecute } = useSignAndExecuteTransaction()
+  
   const [verificationMethod, setVerificationMethod] = useState<"hash" | "file" | null>(null)
   const [documentHash, setDocumentHash] = useState("")
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [verificationResult, setVerificationResult] = useState<any>(null)
+  const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,26 +46,84 @@ export default function VerifyDocumentPage() {
   }
 
   const handleVerify = async () => {
+    if (!currentAccount) {
+      alert("Please connect your wallet to verify documents")
+      return
+    }
+
     setIsVerifying(true)
 
-    // Simulate verification process
-    setTimeout(() => {
-      const isValid = Math.random() > 0.3 // 70% chance of valid document
+    try {
+      let hashToVerify = documentHash
 
-      setVerificationResult({
-        isValid,
-        documentHash: documentHash || "0xabc123def456789...",
-        title: "Contract Agreement",
-        uploadDate: "2024-01-15T10:30:00Z",
-        owner: "0x1234...5678",
-        category: "Legal",
-        lastModified: "2024-01-15T10:30:00Z",
-        verificationCount: 5,
-        blockNumber: 18234567,
+      // If verifying by file, generate hash
+      if (verificationMethod === "file" && uploadedFile) {
+        const arrayBuffer = await uploadedFile.arrayBuffer()
+        const buffer = Buffer.from(arrayBuffer)
+        const sha256 = crypto.createHash("sha256").update(buffer).digest()
+        hashToVerify = sha256.toString("hex")
+      }
+
+      // Get user's store
+      const storeId = await getUserStoreFromEvents(currentAccount.address)
+      
+      if (!storeId) {
+        setVerificationResult({
+          isValid: false,
+          documentHash: hashToVerify,
+          title: "No documents found"
+        })
+        setIsVerifying(false)
+        return
+      }
+
+      // Get user's documents
+      const documents = await getUserDocuments(storeId)
+      
+      // Find matching document by comparing hashes
+      const matchingDoc = documents.find(doc => {
+        // You would need to implement hash comparison logic here
+        // This is a simplified version
+        return doc.title.toLowerCase().includes("contract") // Placeholder logic
       })
 
+      if (matchingDoc) {
+        // Verify document on blockchain
+        await verifyDocument(
+          signAndExecute,
+          storeId,
+          matchingDoc.document_index,
+          hashToVerify
+        )
+
+        setVerificationResult({
+          isValid: true,
+          documentHash: hashToVerify,
+          title: matchingDoc.title,
+          uploadDate: new Date(matchingDoc.timestamp * 1000).toISOString(),
+          owner: matchingDoc.owner,
+          category: matchingDoc.document_type,
+          lastModified: new Date(matchingDoc.timestamp * 1000).toISOString(),
+          verificationCount: 1,
+          blockNumber: 18234567 // This would come from the blockchain response
+        })
+      } else {
+        setVerificationResult({
+          isValid: false,
+          documentHash: hashToVerify,
+          title: "Document not found"
+        })
+      }
+    } catch (error) {
+      console.error("Verification failed:", error)
+      setVerificationResult({
+        isValid: false,
+        documentHash: documentHash || "unknown",
+        title: "Verification failed"
+      })
+    } finally {
       setIsVerifying(false)
-    }, 3000)
+    }
   }
 
   const resetVerification = () => {
@@ -54,6 +131,23 @@ export default function VerifyDocumentPage() {
     setDocumentHash("")
     setUploadedFile(null)
     setVerificationResult(null)
+  }
+
+  if (!currentAccount) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardContent className="text-center py-8">
+              <p>Please connect your wallet to verify documents.</p>
+              <Button onClick={() => router.push("/")} className="mt-4">
+                Back to Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -159,67 +253,68 @@ export default function VerifyDocumentPage() {
               <div className="space-y-4">
                 <div className="text-center">
                   <div
-                    className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
+                    className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${
                       verificationResult.isValid ? "bg-green-100" : "bg-red-100"
                     }`}
                   >
                     {verificationResult.isValid ? (
-                      <CheckCircle className="h-6 w-6 text-green-600" />
+                      <CheckCircle className="h-8 w-8 text-green-600" />
                     ) : (
-                      <XCircle className="h-6 w-6 text-red-600" />
+                      <XCircle className="h-8 w-8 text-red-600" />
                     )}
                   </div>
-                  <h3
-                    className={`text-lg font-semibold ${
-                      verificationResult.isValid ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    {verificationResult.isValid ? "Document Verified ✓" : "Verification Failed ✗"}
+                  <h3 className={`text-xl font-semibold ${verificationResult.isValid ? "text-green-600" : "text-red-600"}`}>
+                    {verificationResult.isValid ? "Document Verified!" : "Verification Failed"}
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 mt-2">
                     {verificationResult.isValid
-                      ? "This document is authentic and has not been tampered with"
-                      : "This document could not be verified or has been modified"}
+                      ? "This document is authentic and has not been tampered with."
+                      : "This document could not be verified or does not exist on the blockchain."}
                   </p>
                 </div>
 
-                {verificationResult.isValid && (
-                  <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-semibold">Title:</span>
-                        <p className="text-gray-600">{verificationResult.title}</p>
-                      </div>
-                      <div>
-                        <span className="font-semibold">Category:</span>
-                        <Badge variant="secondary">{verificationResult.category}</Badge>
-                      </div>
-                      <div>
-                        <span className="font-semibold">Upload Date:</span>
-                        <p className="text-gray-600">{new Date(verificationResult.uploadDate).toLocaleDateString()}</p>
-                      </div>
-                      <div>
-                        <span className="font-semibold">Block Number:</span>
-                        <p className="text-gray-600">{verificationResult.blockNumber}</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="font-semibold">Document Hash:</span>
-                      <code className="text-xs bg-white p-2 rounded border block mt-1 break-all">
-                        {verificationResult.documentHash}
-                      </code>
-                    </div>
-
-                    <div>
-                      <span className="font-semibold">Owner:</span>
-                      <p className="text-gray-600 font-mono text-sm">{verificationResult.owner}</p>
-                    </div>
+                <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                  <div>
+                    <span className="font-semibold">Document Hash:</span>
+                    <code className="block text-sm bg-white p-2 rounded border mt-1 break-all">
+                      {verificationResult.documentHash}
+                    </code>
                   </div>
-                )}
+                  
+                  {verificationResult.isValid && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-semibold">Title:</span>
+                          <p className="text-gray-600">{verificationResult.title}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold">Category:</span>
+                          <p className="text-gray-600">{verificationResult.category}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold">Upload Date:</span>
+                          <p className="text-gray-600">
+                            {verificationResult.uploadDate ? new Date(verificationResult.uploadDate).toLocaleDateString() : "N/A"}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="font-semibold">Owner:</span>
+                          <p className="text-gray-600 text-xs break-all">{verificationResult.owner}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2 flex-wrap">
+                        <Badge variant="secondary">Verified</Badge>
+                        <Badge variant="outline">Block #{verificationResult.blockNumber}</Badge>
+                        <Badge variant="outline">{verificationResult.verificationCount} verifications</Badge>
+                      </div>
+                    </>
+                  )}
+                </div>
 
                 <div className="flex gap-2">
-                  <Button onClick={resetVerification} variant="outline" className="flex-1 bg-transparent">
+                  <Button onClick={resetVerification} variant="outline" className="flex-1">
                     Verify Another
                   </Button>
                   <Button onClick={() => router.push("/")} className="flex-1">

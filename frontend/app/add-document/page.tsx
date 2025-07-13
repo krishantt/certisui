@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { create } from "ipfs-http-client";
 import crypto from "crypto-browserify";
 import { Buffer } from "buffer";
+import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,9 +24,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, Upload, FileText, Hash, Clock } from "lucide-react";
+import { publishDocument, createStore, getUserStoreFromEvents } from "@/lib/store";
+import { uploadToIPFS } from "@/lib/ipfs";
 
 export default function AddDocumentPage() {
   const router = useRouter();
+  const currentAccount = useCurrentAccount();
+  const { mutate: signAndExecute } = useSignAndExecuteTransaction();
+  
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [documentHash, setDocumentHash] = useState("");
@@ -45,7 +50,7 @@ export default function AddDocumentPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.file) return;
+    if (!formData.file || !currentAccount) return;
 
     setIsUploading(true);
 
@@ -53,29 +58,66 @@ export default function AddDocumentPage() {
       const arrayBuffer = await formData.file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      // Upload to IPFS
-      const ipfs = create({ url: "https://ipfs.infura.io:5001/api/v0" });
-      const result = await ipfs.add(buffer);
-      const ipfsHash = result.path;
+      // Upload to IPFS using free service
+      const ipfsHash = await uploadToIPFS(buffer);
 
-      // SHA256 hash
+      // Generate SHA256 hash
       const sha256 = crypto.createHash("sha256").update(buffer).digest();
       const sha256Hex = sha256.toString("hex");
 
-      const ipfsBytes = Array.from(Buffer.from(ipfsHash)) as number[];
-      const shaBytes = Array.from(sha256) as number[];
+      // Get or create user's document store
+      let storeId = await getUserStoreFromEvents(currentAccount.address);
+      
+      if (!storeId) {
+        // Create new store if user doesn't have one
+        const storeResult = await createStore(signAndExecute);
+        // Extract store ID from transaction result
+        storeId = storeResult.objectChanges?.find((change: any) => 
+          change.type === 'created' && change.objectType.includes('DocumentStore')
+        )?.objectId;
+      }
 
-      await publishToSui(ipfsBytes, shaBytes);
+      if (!storeId) {
+        throw new Error("Failed to create or retrieve document store");
+      }
+
+      // Publish document to blockchain
+      await publishDocument(
+        signAndExecute,
+        storeId,
+        formData.title,
+        formData.category,
+        ipfsHash,
+        sha256Hex,
+        Math.floor(Date.now() / 1000)
+      );
 
       setDocumentHash("0x" + sha256Hex);
       setUploadSuccess(true);
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Upload failed. Check console for details.");
+      alert("Upload failed. Please try again.");
     } finally {
       setIsUploading(false);
     }
   };
+
+  if (!currentAccount) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardContent className="text-center py-8">
+              <p>Please connect your wallet to add documents.</p>
+              <Button onClick={() => router.push("/")} className="mt-4">
+                Back to Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (uploadSuccess) {
     return (
@@ -252,14 +294,4 @@ export default function AddDocumentPage() {
       </div>
     </div>
   );
-}
-
-// Mock function — we'll connect to Sui next
-async function publishToSui(ipfsBytes: number[], shaBytes: number[]) {
-  console.log("Uploading to Sui smart contract...");
-  console.log("IPFS Bytes:", ipfsBytes);
-  console.log("SHA256 Bytes:", shaBytes);
-
-  // 🔁 In next step, connect this to your Move contract
-  await new Promise((resolve) => setTimeout(resolve, 1000));
 }
