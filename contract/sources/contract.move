@@ -32,7 +32,7 @@ public fun create_store(ctx: &mut TxContext): DocumentStore {
     let id = object::new(ctx);
     DocumentStore {
         id,
-        owner: tx_context::sender(ctx),
+        owner: ctx.sender(),
         documents: vector::empty<Document>(),
     }
 }
