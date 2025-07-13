@@ -24,7 +24,7 @@ export default function HomePage() {
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">DocChain</h1>
+              <h1 className="text-3xl font-bold text-gray-900">CertiSui</h1>
               <p className="text-gray-600">Decentralized Document Management</p>
             </div>
             <div className="flex items-center gap-4">
@@ -161,7 +161,7 @@ export default function HomePage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <Wallet className="h-6 w-6 text-blue-600" />
           </div>
-          <CardTitle className="text-2xl">Welcome to DocChain</CardTitle>
+          <CardTitle className="text-2xl">Welcome to CertiSui</CardTitle>
           <CardDescription>
             Connect your wallet to access the decentralized document management
             system
