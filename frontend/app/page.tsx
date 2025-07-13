@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,56 +10,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Wallet, FileText, Share, Shield, CheckCircle } from "lucide-react";
+import { ConnectButton, useCurrentAccount } from '@mysten/dapp-kit';
 
 export default function HomePage() {
-  const [isConnected, setIsConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState("");
+  const account = useCurrentAccount();
 
-  useEffect(() => {
-    // Check if wallet is already connected
-    const savedAddress = localStorage.getItem("walletAddress");
-    if (savedAddress) {
-      setIsConnected(true);
-      setWalletAddress(savedAddress);
-    }
-  }, []);
 
-  const connectWallet = async () => {
-    try {
-      // Simulate wallet connection
-      const mockAddress = "0x" + Math.random().toString(16).substr(2, 40);
-      setWalletAddress(mockAddress);
-      setIsConnected(true);
-      localStorage.setItem("walletAddress", mockAddress);
-    } catch (error) {
-      console.error("Failed to connect wallet:", error);
-    }
-  };
 
-  const disconnectWallet = () => {
-    setIsConnected(false);
-    setWalletAddress("");
-    localStorage.removeItem("walletAddress");
-  };
-
-  if (isConnected) {
+  if (account) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">DocChain</h1>
+              <h1 className="text-3xl font-bold text-gray-900">CertiSui</h1>
               <p className="text-gray-600">Decentralized Document Management</p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-sm text-gray-600">
-                Connected: {walletAddress.slice(0, 6)}...
-                {walletAddress.slice(-4)}
-              </div>
-              <Button variant="outline" onClick={disconnectWallet}>
-                Disconnect
-              </Button>
+              <ConnectButton/>
             </div>
           </div>
 
@@ -192,7 +161,7 @@ export default function HomePage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <Wallet className="h-6 w-6 text-blue-600" />
           </div>
-          <CardTitle className="text-2xl">Welcome to DocChain</CardTitle>
+          <CardTitle className="text-2xl">Welcome to CertiSui</CardTitle>
           <CardDescription>
             Connect your wallet to access the decentralized document management
             system
@@ -208,9 +177,7 @@ export default function HomePage() {
               <li>• Immutable document history</li>
             </ul>
           </div>
-          <Button onClick={connectWallet} className="w-full">
-            Connect Wallet
-          </Button>
+          <div className="w-full flex justify-center"><ConnectButton /></div>
         </CardContent>
       </Card>
     </div>

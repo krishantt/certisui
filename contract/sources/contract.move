@@ -1,11 +1,16 @@
 module contract::document_store;
 
 use sui::event;
+use std::string;
+
+
 
 /// Represents a digital document's metadata
 public struct Document has key, store {
     id: UID,
     owner: address,
+    title: string::String,
+    document_type: string::String,
     ipfs_hash: vector<u8>,
     sha256_hash: vector<u8>,
     timestamp: u64,
@@ -40,16 +45,20 @@ public fun create_store(ctx: &mut TxContext): DocumentStore {
 /// Publish a new document to your store
 public fun publish_document(
     store: &mut DocumentStore,
+    title: string::String,
+    document_type: string::String,
     ipfs_hash: vector<u8>,
     sha256_hash: vector<u8>,
     timestamp: u64,
     ctx: &mut TxContext,
 ) {
     let doc_id = object::new(ctx);
-    let owner = tx_context::sender(ctx);
+    let owner = ctx.sender();
     let doc = Document {
         id: doc_id,
         owner,
+        title,
+        document_type,
         ipfs_hash,
         sha256_hash,
         timestamp,
