@@ -19,6 +19,8 @@ export interface DocumentEvent {
     title: string;
     document_type: string;
     timestamp: number;
+    ipfs_hash: string ; // Hex string representation of the IPFS hash
+    sha256_hash: Uint8Array; // Hex string representation of the SHA256 hash
 }
 
 export interface ShareEvent {

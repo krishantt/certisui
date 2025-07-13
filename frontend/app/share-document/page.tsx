@@ -43,7 +43,7 @@ export default function ShareDocumentPage() {
         const formattedDocs = userDocs.map((doc, index) => ({
           id: doc.document_index.toString(),
           title: doc.title,
-          hash: `0x${doc.document_index}`, // Simplified hash representation
+          hash: `0x{[...new Uint8Array(doc.sha256_hash)].map(x => x.toString(16).padStart(2, '0')).join('').slice(0, 20)}...`, // Simplified hash representation
           category: doc.document_type,
           documentIndex: doc.document_index
         }))

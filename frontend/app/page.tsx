@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Share, Shield, FileText, Clock, Hash } from "lucide-react";
+import { Plus, Share, Shield, FileText, Clock, Hash, Globe } from "lucide-react";
 import { getUserStoreFromEvents, getUserDocuments, DocumentEvent } from "@/lib/store";
 import { getIPFSUrl } from "@/lib/ipfs";
 
@@ -140,9 +140,9 @@ export default function HomePage() {
                             <h3 className="font-medium">{doc.title}</h3>
                             <div className="flex items-center gap-4 text-sm text-gray-500">
                               <span className="flex items-center gap-1">
-                                <Hash className="h-3 w-3" />
-                                #{doc.document_index}
+                                0x{[...new Uint8Array(doc.sha256_hash)].map(x => x.toString(16).padStart(2, '0')).join('').slice(0, 20)}...
                               </span>
+                              
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
                                 {formatDate(doc.timestamp)}

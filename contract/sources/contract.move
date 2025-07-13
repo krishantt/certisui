@@ -35,6 +35,8 @@ public struct DocumentPublished has copy, drop {
     owner: address,
     title: string::String,
     document_type: string::String,
+    ipfs_hash: vector<u8>,
+    sha256_hash: vector<u8>,
     timestamp: u64,
 }
 
@@ -109,6 +111,8 @@ public fun publish_document(
         title,
         document_type,
         timestamp,
+        ipfs_hash,
+        sha256_hash,
     });
 }
 
