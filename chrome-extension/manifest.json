@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "DocuVault",
+  "description": "Store and verify documents on IPFS and Sui blockchain",
+  "version": "1.0",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "assets/icon.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
