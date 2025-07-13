@@ -60,8 +60,8 @@ export default function HomePage() {
             Secure Document Management on Sui Blockchain
           </p>
           {currentAccount && (
-            
-            
+
+
             <ConnectButton />
           )}
         </div>
@@ -77,7 +77,7 @@ export default function HomePage() {
               <p className="text-sm text-gray-500">
                 Please use the wallet connection button below.
               </p>
-              <ConnectButton/>
+              <ConnectButton />
             </CardContent>
           </Card>
         ) : (
