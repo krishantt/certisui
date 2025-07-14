@@ -140,7 +140,7 @@ export default function HomePage() {
                             <h3 className="font-medium">{doc.title}</h3>
                             <div className="flex items-center gap-4 text-sm text-gray-500">
                               <span className="flex items-center gap-1">
-                                0x{[...new Uint8Array(doc.sha256_hash)].map(x => x.toString(16).padStart(2, '0')).join('').slice(0, 20)}...
+                                0x{[...new Uint8Array(doc.sha256_hash)].map(x => x.toString(16).padStart(2, '0')).join('')}
                               </span>
                               
                               <span className="flex items-center gap-1">
